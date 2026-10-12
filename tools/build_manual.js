@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+const { writeCasesPart } = require('./casos_reales_render');
+writeCasesPart(path.join(root, 'manual_parts', 'parte_38_casos_reales.md'));
 const parts = [
   'manual_parts/parte_00_preliminares.md',
   'manual_parts/parte_01_02.md',
@@ -16,6 +18,7 @@ const parts = [
   'manual_parts/parte_31_34.md',
   'manual_parts/parte_36_apendices.md',
   'manual_parts/parte_35_aliases.md',
+  'manual_parts/parte_38_casos_reales.md',
   'manual_parts/parte_37_protocolo_tiempos.md',
 ];
 const missing = parts.filter((p) => !fs.existsSync(path.join(root, p)));

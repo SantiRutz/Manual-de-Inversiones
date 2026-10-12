@@ -16,7 +16,8 @@ const required = [
   'OWNER EARNINGS', 'FREE CASH FLOW', 'VALUACIÓN POR MÚLTIPLOS', 'DIVIDENDOS', 'CALIDAD DEL NEGOCIO',
   'MANAGEMENT', 'RECOMPRAS DE ACCIONES', 'ROIC', 'WACC', 'CAPM', 'BETA', 'INFLACIÓN', 'RIESGO Y RETORNO',
   'PORTAFOLIO', 'BONOS', 'ETF', 'ANÁLISIS DE UNA EMPRESA', 'CHECKLIST', 'VALUE TRAPS', 'ERRORES DEL INVERSOR',
-  'EJEMPLOS COMPLETOS', 'TABLA MAESTRA', 'GLOSARIO', 'REGLAS IMPORTANTES', 'FORMATO', 'CÓMO ANALIZAR UNA ACCIÓN DESDE CERO'
+  'EJEMPLOS COMPLETOS', 'TABLA MAESTRA', 'GLOSARIO', 'REGLAS IMPORTANTES', 'FORMATO', 'CÓMO ANALIZAR UNA ACCIÓN DESDE CERO',
+  'CASOS REALES', 'SESGO DE SUPERVIVENCIA'
 ];
 const terms = ['ROE','ROA','ROIC','ROCE','Gross Margin','Operating Margin','Net Margin','EBITDA Margin','FCF Margin','Current Ratio','Quick Ratio','Cash Ratio','Working Capital','Debt-to-Equity','Debt-to-Assets','Net Debt','Net Debt/EBITDA','Debt/FCF','Interest Coverage','DSCR','Asset Turnover','Inventory Turnover','Receivables Turnover','Payables Turnover','DIO','DSO','DPO','Cash Conversion Cycle','P/E','Forward P/E','PEG','P/B','P/S','EV/EBITDA','EV/EBIT','EV/Sales','FCF Yield','Earnings Yield','Dividend Yield','Revenue Growth','EPS Growth','FCF Growth','Book Value Growth','CAGR','Owner Earnings','Terminal Value','Intrinsic Value','Margin of Safety','NOPAT','Standard Deviation','Variance','Sharpe','Sortino','Maximum Drawdown','Gross Profit','Operating Income','EBIT','EBITDA','EBT','Net Income','EPS','CFO','CFI','CFF','CapEx','Free Cash Flow','Debt Service Coverage Ratio','Days Inventory Outstanding','Days Sales Outstanding','Days Payable Outstanding','Expected Return','Asset Allocation','Correlation','Portfolio Return','Rebalancing','Face Value','Coupon','Coupon Rate','YTM','Duration','Maturity','Credit Risk','Expense Ratio','Tracking Error','WACC','CAPM','Beta','Real Return','Value Trap','Moat'];
 let ok = sourceParity;

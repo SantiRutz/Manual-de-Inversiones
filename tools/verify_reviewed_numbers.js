@@ -38,4 +38,22 @@ const novaEquity = novaPvExplicit + novaPvTerminal - 28 + 8;
 close(novaTv, 225.9538, 0.001, 'TV normalizado Nova');
 close(novaPvTerminal, 146.8545, 0.001, 'PV del TV normalizado Nova');
 close(novaEquity / 10, 16.8957, 0.001, 'valor por acción con TV normalizado Nova');
+
+const { empresas, valorar, esBanco } = require('./casos_reales');
+const { renderCasesMarkdown, formatPct } = require('./casos_reales_render');
+const casesMarkdown = renderCasesMarkdown();
+for (const empresa of empresas) {
+  const valor = valorar(empresa);
+  const last = empresa.flujos[empresa.flujos.length - 1];
+  const tasa = esBanco(empresa) ? empresa.supuestos.ke : empresa.supuestos.wacc;
+  close(valor.terminalFlow, last * (1 + empresa.supuestos.g), 1e-9, `flujo terminal ${empresa.id}`);
+  close(valor.tv, valor.terminalFlow / (tasa - empresa.supuestos.g), 1e-6, `TV ${empresa.id}`);
+  if (esBanco(empresa)) close(valor.equity, valor.base.ev, 1e-6, `equity directo ${empresa.id}`);
+  else close(valor.equity, valor.ev - empresa.mercado.deudaNeta, 1e-6, `puente ${empresa.id}`);
+  close(valor.porAccion, valor.equity / empresa.mercado.acciones, 1e-6, `por acción ${empresa.id}`);
+  assert(valor.ivBajo > 0, `${empresa.id}: el IV bajo debe ser positivo para expresar el MoS`);
+  close(valor.mosBajo, (valor.ivBajo - empresa.mercado.precio) / valor.ivBajo, 1e-9, `MoS ${empresa.id}`);
+  assert(casesMarkdown.includes(formatPct(valor.mosBajo)), `${empresa.id}: el Markdown no contiene el MoS calculado`);
+}
+assert(/sesgo de supervivencia/i.test(casesMarkdown), 'falta el sesgo de supervivencia en la sección generada');
 console.log('Todas las comprobaciones revisadas pasan.');

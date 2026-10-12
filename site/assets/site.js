@@ -121,12 +121,18 @@
     if (event.key === 'Escape' && body.classList.contains('nav-open')) setNavigation(false);
   });
 
-  let savedTheme = 'light';
-  try { savedTheme = localStorage.getItem('manual-theme') || 'light'; } catch (_) { /* file:// storage can be unavailable */ }
-  root.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+  let savedTheme = 'dark';
+  try { savedTheme = localStorage.getItem('manual-theme') || 'dark'; } catch (_) { /* file:// storage can be unavailable */ }
+  function applyTheme(theme) {
+    const next = theme === 'light' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', next === 'dark' ? '#171f1d' : '#f1eee5');
+  }
+  applyTheme(savedTheme);
   if (themeToggle) themeToggle.addEventListener('click', () => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    root.dataset.theme = next;
+    applyTheme(next);
     try { localStorage.setItem('manual-theme', next); } catch (_) { /* theme still changes for this page */ }
   });
 

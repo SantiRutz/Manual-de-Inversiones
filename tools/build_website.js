@@ -1,11 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const { placa } = require('./casos_reales');
+const { formatNum, formatPct } = require('./casos_reales_render');
 
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'site');
 const buildSource = fs.readFileSync(path.join(__dirname, 'build_manual.js'), 'utf8');
 const parts = [...buildSource.matchAll(/'manual_parts\/([^']+\.md)'/g)].map((match) => match[1]);
-if (parts.length !== 14) throw new Error(`Se esperaban 14 partes canónicas en build_manual.js; se encontraron ${parts.length}.`);
+if (parts.length !== 15) throw new Error(`Se esperaban 15 partes canónicas en build_manual.js; se encontraron ${parts.length}.`);
 const missing = parts.filter((part) => !fs.existsSync(path.join(root, 'manual_parts', part)));
 if (missing.length) throw new Error(`Faltan partes canónicas: ${missing.join(', ')}`);
 
@@ -28,14 +30,15 @@ for (const match of rawContent.matchAll(partPattern)) {
 }
 const content = rawContent.replace(/^#\s+Parte\s+[^\r\n]+\r?\n/gm, '');
 
-const sectionPattern = /^#\s+(Apéndices|Sección final)\b[^\r\n]*$/gm;
+const sectionPattern = /^#\s+(Apéndices|Sección final|Casos reales)\b[^\r\n]*$/gm;
+const specialKind = { Apéndices: 'appendix', 'Casos reales': 'cases', 'Sección final': 'protocol' };
 const specialMatches = [...content.matchAll(sectionPattern)];
 const pageStarts = [
   ...chapterMatches.map((match) => ({ index: content.indexOf(match[0]), kind: 'chapter', number: Number(match[1]), title: match[2].trim() })),
-  ...specialMatches.map((match) => ({ index: match.index, kind: match[1] === 'Apéndices' ? 'appendix' : 'protocol', title: match[0].replace(/^#\s+/, '').trim() })),
+  ...specialMatches.map((match) => ({ index: match.index, kind: specialKind[match[1]], title: match[0].replace(/^#\s+/, '').trim() })),
 ].sort((a, b) => a.index - b.index);
 
-if (pageStarts.length !== 36) throw new Error(`Se esperaban 34 capítulos, apéndices y protocolo; se encontraron ${pageStarts.length} secciones.`);
+if (pageStarts.length !== 37) throw new Error(`Se esperaban 34 capítulos, casos reales, apéndices y protocolo; se encontraron ${pageStarts.length} secciones.`);
 const guideMarkdown = cleanSection(content.slice(0, pageStarts[0].index));
 const pages = [{
   id: 'guia', file: 'guia.html', kind: 'guide', title: 'Presentación y guía', section: 'Inicio', markdown: guideMarkdown,
@@ -44,14 +47,14 @@ for (let i = 0; i < pageStarts.length; i += 1) {
   const start = pageStarts[i];
   const end = i + 1 < pageStarts.length ? pageStarts[i + 1].index : content.length;
   const markdown = cleanSection(content.slice(start.index, end));
-  const id = start.kind === 'chapter' ? `capitulo-${String(start.number).padStart(2, '0')}` : start.kind === 'appendix' ? 'apendices' : 'protocolo';
+  const id = start.kind === 'chapter' ? `capitulo-${String(start.number).padStart(2, '0')}` : start.kind === 'appendix' ? 'apendices' : start.kind === 'cases' ? 'casos-reales' : 'protocolo';
   const file = `${id}.html`;
   pages.push({
     id,
     file,
     kind: start.kind,
     number: start.number,
-    title: start.title || (start.kind === 'appendix' ? 'Apéndices y equivalencias' : 'Análisis en 30 minutos, 1 hora y 3 horas'),
+    title: start.title || (start.kind === 'appendix' ? 'Apéndices y equivalencias' : start.kind === 'cases' ? 'Casos reales' : 'Análisis en 30 minutos, 1 hora y 3 horas'),
     section: sectionFor(start.number, start.kind),
     kicker: start.kind === 'chapter' ? partNotes.get(start.number) || '' : '',
     markdown,
@@ -64,6 +67,7 @@ const chapters = pages.filter((page) => page.kind === 'chapter');
 const guide = pages.find((page) => page.kind === 'guide');
 const appendices = pages.find((page) => page.kind === 'appendix');
 const protocol = pages.find((page) => page.kind === 'protocol');
+const casesPage = pages.find((page) => page.kind === 'cases');
 
 function cleanSection(value) {
   return value.replace(/^\s*---+\s*$/gm, '').trim();
@@ -71,6 +75,7 @@ function cleanSection(value) {
 function sectionFor(number, kind) {
   if (kind === 'appendix') return 'Apéndices y referencia';
   if (kind === 'protocol') return 'Herramientas prácticas';
+  if (kind === 'cases') return 'Casos reales';
   if (number <= 8) return 'Fundamentos';
   if (number <= 13) return 'Valoración';
   if (number <= 20) return 'Calidad y capital';
@@ -240,6 +245,7 @@ function sidebarHtml(activeId) {
     { title: 'Riesgo e instrumentos · 21–25', entries: chapters.filter((page) => page.number >= 21 && page.number <= 25) },
     { title: 'Proceso · 26–29', entries: chapters.filter((page) => page.number >= 26 && page.number <= 29) },
     { title: 'Casos y referencia · 30–34', entries: chapters.filter((page) => page.number >= 30) },
+    { title: 'Casos reales · informes públicos', entries: [casesPage] },
     { title: 'Consulta rápida', entries: [appendices, protocol] },
   ];
   return `<a class="sidebar-home ${activeId === 'inicio' ? 'is-active' : ''}" href="index.html"><span class="nav-number">⌂</span><span>Portada</span></a>${groups.map((group) => `<section class="nav-group"><h2>${escapeHtml(group.title)}</h2><ul>${group.entries.map((page) => {
@@ -254,7 +260,7 @@ function tableOfContents(headings) {
   return `<ol>${items.map((heading) => `<li class="toc-level-${heading.level}"><a href="#${escapeHtml(heading.id)}">${escapeHtml(heading.title)}</a></li>`).join('')}</ol>`;
 }
 function footerHtml() {
-  return '<footer class="site-footer"><span>Manual educativo · Datos ficticios</span><span>Corte de casos: 31 dic 2025 · Edición: 24 sep 2026</span><a href="index.html">Volver a portada ↑</a></footer>';
+  return '<footer class="site-footer"><span>Capítulos 1–34: datos ficticios (corte 31 dic 2025) · Casos reales: informes públicos (corte por empresa)</span><span>Edición: 24 sep 2026</span><a href="index.html">Volver a portada ↑</a></footer>';
 }
 function pageShell({ title, description, activeId, body, toc, page, isHome = false }) {
   const pageIndex = page ? pages.findIndex((item) => item.id === page.id) : -1;
@@ -262,9 +268,67 @@ function pageShell({ title, description, activeId, body, toc, page, isHome = fal
   const next = pageIndex >= 0 && pageIndex + 1 < pages.length ? pages[pageIndex + 1] : null;
   const pageNav = page ? `<nav class="chapter-nav" aria-label="Navegación entre secciones">${prev ? `<a class="chapter-nav-card previous" href="${hrefFor(prev)}"><span>← Anterior</span><strong>${escapeHtml(prev.title)}</strong></a>` : '<span></span>'}${next ? `<a class="chapter-nav-card next" href="${hrefFor(next)}"><span>Siguiente →</span><strong>${escapeHtml(next.title)}</strong></a>` : '<span></span>'}</nav>` : '';
   const articleToc = !isHome ? `<aside class="contents-panel"><div class="contents-sticky"><p class="panel-kicker">EN ESTA PÁGINA</p>${toc}</div></aside>` : '';
-  const pageLabel = page?.kind === 'chapter' ? `CAPÍTULO ${String(page.number).padStart(2, '0')} / 34` : page?.kind === 'protocol' ? 'GUÍA PRÁCTICA' : page?.kind === 'appendix' ? 'REFERENCIA' : 'ORIENTACIÓN';
+  const pageLabel = page?.kind === 'chapter' ? `CAPÍTULO ${String(page.number).padStart(2, '0')} / 34` : page?.kind === 'protocol' ? 'GUÍA PRÁCTICA' : page?.kind === 'cases' ? 'DATOS REALES' : page?.kind === 'appendix' ? 'REFERENCIA' : 'ORIENTACIÓN';
   const kicker = page ? `<div class="reader-meta"><div class="reader-meta-heading"><span class="reader-meta-section">${escapeHtml(page.section)}</span></div>${page.kind === 'chapter' ? `<div class="chapter-progress"><span>${String(page.number).padStart(2, '0')}</span><progress max="34" value="${page.number}" aria-label="Avance del capítulo ${page.number} de 34">${page.number} de 34</progress><span class="chapter-progress-total">34</span></div>` : ''}${page.kicker ? `<p class="part-kicker">${escapeHtml(page.kicker)}</p>` : ''}</div>` : '';
-  return `<!doctype html><html lang="es" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#10273d"><meta name="description" content="${escapeHtml(description)}"><title>${escapeHtml(title)} · Manual de inversiones</title><link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css"></head><body data-page="${escapeHtml(activeId)}" class="${isHome ? 'home-page' : 'reader-page'}"><div class="reading-progress" id="readingProgress"></div><header class="topbar"><a class="brand" href="index.html" aria-label="Manual de inversiones, inicio"><span class="brand-mark">V</span><span class="brand-copy"><strong>MANUAL DE INVERSIÓN</strong><small>VALOR · ANÁLISIS · CRITERIO</small></span></a><div class="topbar-tools"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="siteSearch" type="search" placeholder="Buscar en el manual…" aria-label="Buscar en todo el manual" autocomplete="off"><kbd>Ctrl/⌘ K</kbd><div class="search-results" id="searchResults" role="listbox" aria-live="polite" aria-label="Resultados de búsqueda" hidden></div></div><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Abrir navegación" aria-expanded="false"><span></span><span></span></button><button class="icon-button theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span class="theme-sun">☼</span><span class="theme-moon">◐</span></button><button class="print-button" type="button" onclick="window.print()"><span>Imprimir</span><span aria-hidden="true">↗</span></button></div></header><div class="mobile-scrim" id="mobileScrim"></div><div class="site-layout"><aside class="sidebar" id="sidebar"><div class="sidebar-top"><p class="panel-kicker">CONTENIDO</p><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar navegación">×</button></div><nav class="sidebar-nav" aria-label="Índice principal">${sidebarHtml(activeId)}</nav><div class="sidebar-note"><span class="status-dot"></span><span>Edición revisada<br><strong>24 septiembre 2026</strong></span></div></aside><main class="main-column"><div class="page-breadcrumb"><a href="index.html">Inicio</a><span>/</span><span>${escapeHtml(isHome ? 'Manual completo' : pageLabel)}</span></div>${kicker}<article class="prose ${isHome ? 'home-content' : ''}">${body}</article>${pageNav}${footerHtml()}</main>${articleToc}</div><script src="assets/search-index.js"></script><script src="assets/site.js" defer></script></body></html>`;
+  return `<!doctype html><html lang="es" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171f1d"><meta name="description" content="${escapeHtml(description)}"><title>${escapeHtml(title)} · Manual de inversiones</title><link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/site.css"></head><body data-page="${escapeHtml(activeId)}" class="${isHome ? 'home-page' : 'reader-page'}"><a class="skip-link" href="#contenido">Saltar al contenido</a><div class="reading-progress" id="readingProgress"></div><header class="topbar"><a class="brand" href="index.html" aria-label="Manual de inversiones, inicio"><span class="brand-mark">V</span><span class="brand-copy"><strong>MANUAL DE INVERSIÓN</strong><small>VALOR · ANÁLISIS · CRITERIO</small></span></a><div class="topbar-tools"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="siteSearch" type="search" placeholder="Buscar en el manual…" aria-label="Buscar en todo el manual" autocomplete="off"><kbd>Ctrl/⌘&nbsp;K</kbd><div class="search-results" id="searchResults" role="listbox" aria-live="polite" aria-label="Resultados de búsqueda" hidden></div></div><button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="Abrir navegación" aria-expanded="false"><span></span><span></span></button><button class="icon-button theme-toggle" id="themeToggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span class="theme-sun">☼</span><span class="theme-moon">◐</span></button><button class="print-button" type="button" onclick="window.print()"><span>Imprimir</span><span aria-hidden="true">↗</span></button></div></header><div class="mobile-scrim" id="mobileScrim"></div><div class="site-layout"><aside class="sidebar" id="sidebar"><div class="sidebar-top"><p class="panel-kicker">CONTENIDO</p><button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar navegación">×</button></div><nav class="sidebar-nav" aria-label="Índice principal">${sidebarHtml(activeId)}</nav><div class="sidebar-note"><span class="status-dot"></span><span>Edición revisada<br><strong>24 septiembre 2026</strong></span></div></aside><main class="main-column" id="contenido"><div class="page-breadcrumb"><a href="index.html">Inicio</a><span>/</span><span>${escapeHtml(isHome ? 'Manual completo' : pageLabel)}</span></div>${kicker}<article class="prose ${isHome ? 'home-content' : ''}">${body}</article>${pageNav}${footerHtml()}</main>${articleToc}</div><script src="assets/search-index.js"></script><script src="assets/site.js" defer></script></body></html>`;
+}
+function plateMarkup() {
+  const { empresa, valor } = placa();
+  const precio = empresa.mercado.precio;
+  const bajo = valor.ivBajo;
+  const alto = valor.ivAlto;
+  const width = 366;
+  const pad = 4;
+  const scaleMax = Math.max(precio, bajo, alto) * 1.08;
+  const x = (v) => pad + (v / scaleMax) * (width - pad * 2);
+  const r = (v) => Math.round(v * 10) / 10;
+  const xp = x(precio);
+  const xb = x(bajo);
+  const xa = x(alto);
+  const inside = xp - pad >= 52;
+  const priceX = inside ? xp - 8 : xp + 6;
+  const priceAnchor = inside ? 'end' : 'start';
+  const relacion = precio < bajo ? 'DESCUENTO' : precio > alto ? 'PRIMA' : 'DENTRO';
+  const gapMid = (Math.min(xp, xb) + Math.max(xp, xb)) / 2;
+  const bracket = relacion === 'DENTRO' ? '' : `<path d="M${r(xp)} 50 L${r(xp)} 56 L${r(xb)} 56 L${r(xb)} 50" fill="none" class="plate-gold" stroke="currentColor" stroke-width="1"/>`;
+  const highAnchor = xa + 42 > width - 4 ? 'end' : 'start';
+  const highX = highAnchor === 'end' ? xa : Math.min(xa + 4, width - 4);
+  const lectura = `Precio ${formatNum(precio, 2)} frente a un rango de ${formatNum(bajo, 2)} a ${formatNum(alto, 2)}. Margen conservador ${formatPct(valor.mosBajo)}, calculado contra el extremo bajo.`;
+  const footLeft = empresa.provisional
+    ? 'ANDAMIAJE · NO ES UNA COTIZACIÓN'
+    : `${escapeHtml(empresa.ticker)} · ${escapeHtml(empresa.mercado.fechaPrecio)}`;
+  const notaAlto = valor.mosAlto === null
+    ? 'El extremo alto no tiene un margen expresable.'
+    : `Contra el extremo alto el margen es ${formatPct(valor.mosAlto)}. El valor intrínseco es un intervalo, y se cotiza contra el extremo conservador.`;
+  return `<div class="valuation-plate" data-plate-id="${escapeHtml(empresa.id)}" data-plate-price="${precio}" data-plate-iv-low="${bajo.toFixed(4)}" data-plate-iv-high="${alto.toFixed(4)}" data-plate-mos="${valor.mosBajo.toFixed(6)}">
+          <div class="plate-top"><span>LECTURA DEL VALOR</span><span>PRECIO ↔ VALOR</span></div>
+          <div class="plate-figure" role="group" aria-label="${escapeHtml(lectura)}">
+            <svg class="plate-svg" viewBox="0 0 366 124" aria-hidden="true">
+              <line x1="${r(xp)}" y1="8" x2="${r(xp)}" y2="104" stroke="var(--line)" stroke-width="1"/>
+              <line x1="${r(xb)}" y1="8" x2="${r(xb)}" y2="104" stroke="var(--line)" stroke-width="1"/>
+              <text x="0" y="12" class="plate-muted" font-size="8.5" font-weight="700" letter-spacing="1">PRECIO DE MERCADO</text>
+              <rect x="0" y="18" width="${r(Math.max(xp, 1))}" height="15" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="${r(priceX)}" y="29.5" class="plate-ink" font-size="12" font-weight="700" text-anchor="${priceAnchor}">${formatNum(precio, 0)}</text>
+              <text x="${r(gapMid)}" y="47" class="plate-gold" font-size="8" font-weight="700" text-anchor="middle" letter-spacing=".6">${relacion}</text>
+              ${bracket}
+              <text x="0" y="71" class="plate-teal" font-size="8.5" font-weight="700" letter-spacing="1">VALOR INTRÍNSECO ESTIMADO</text>
+              <rect x="0" y="77" width="${r(x(scaleMax))}" height="27" fill="var(--teal)" opacity=".10" stroke="var(--line)" stroke-width="1"/>
+              <rect x="${r(Math.min(xb, xa))}" y="77" width="${r(Math.max(xa - xb, 1))}" height="27" fill="var(--teal)" opacity=".40" stroke="var(--teal)" stroke-width="1"/>
+              <text x="${r(xb)}" y="118" class="plate-teal" font-size="11" font-weight="700" text-anchor="end">${formatNum(bajo, 0)}</text>
+              <text x="${r(highX)}" y="118" class="plate-teal" font-size="11" font-weight="700" text-anchor="${highAnchor}">${formatNum(alto, 0)}</text>
+            </svg>
+            <div class="plate-read">
+              <div><span class="k">PRECIO</span><strong>${formatNum(precio, 2)}</strong><small>De mercado</small></div>
+              <div><span class="k">IV (RANGO)</span><strong class="plate-iv">${formatNum(bajo, 2)}–${formatNum(alto, 2)}</strong><small>Estimado, no un punto</small></div>
+              <div><span class="k">MARGEN MoS</span><strong class="plate-mos">${formatPct(valor.mosBajo)}</strong><small>Contra el extremo bajo</small></div>
+            </div>
+            <div class="plate-deriv">
+              <span>MoS = (IV − precio) / IV = (${formatNum(bajo, 2)} − ${formatNum(precio, 2)}) / ${formatNum(bajo, 2)} = <b>${formatPct(valor.mosBajo)}</b></span>
+              <small>${escapeHtml(notaAlto)}</small>
+            </div>
+          </div>
+          <div class="plate-foot"><span>${footLeft}</span><a href="casos-reales.html">Ver el cálculo →</a></div>
+        </div>`;
 }
 function renderHome() {
   const cards = [
@@ -273,11 +337,12 @@ function renderHome() {
     { eyebrow: '14—20', title: 'Calidad y capital', desc: 'Ventajas competitivas, gestión, recompras, ROIC y WACC.', href: chapterHref(14), icon: '03' },
     { eyebrow: '21—25', title: 'Riesgo e instrumentos', desc: 'Inflación, cartera, bonos, ETF y riesgo de mercado.', href: chapterHref(21), icon: '04' },
     { eyebrow: '26—29', title: 'Proceso de inversión', desc: 'Investigación, checklist, trampas de valor y sesgos.', href: chapterHref(26), icon: '05' },
-    { eyebrow: '30—34', title: 'Casos y referencia', desc: 'Cinco casos ficticios, tabla maestra, glosario y reglas.', href: chapterHref(30), icon: '06' },
+    { eyebrow: '30—34', title: 'Casos y referencia', desc: 'Cinco casos ficticios, tabla maestra, glosario y reglas. Casos reales aparte con datos de mercado.', href: chapterHref(30), icon: '06' },
   ];
   const quick = [
     { label: 'Empezar por la guía', detail: 'Cómo usar el manual y sus convenciones', href: 'guia.html', icon: '↗' },
     { label: 'Ver los casos completos', detail: 'Cinco empresas ficticias y sus DCF', href: chapterHref(30), icon: '↗' },
+    { label: 'Ver los casos reales', detail: 'Seis empresas con informes públicos y DCF', href: 'casos-reales.html', icon: '↗' },
     { label: 'Abrir el protocolo rápido', detail: '30 minutos · 1 hora · 3 horas', href: protocol.file, icon: '↗' },
   ];
   return `
@@ -291,33 +356,17 @@ function renderHome() {
             <a class="button button-primary" href="guia.html">Explorar el manual <span>→</span></a>
             <a class="button button-quiet" href="${protocol.file}">Análisis en 30 min <span>↗</span></a>
           </div>
-          <div class="hero-meta"><span>34 capítulos</span><span>·</span><span>Casos ficticios</span><span>·</span><span>Edición revisada</span></div>
+          <div class="hero-meta"><span>34 capítulos</span><span>·</span><span>Casos ficticios</span><span>·</span><span>Casos reales</span><span>·</span><span>Edición revisada</span></div>
         </div>
-        <div class="valuation-plate" role="img" aria-label="Esquema conceptual, sin escala ni cotización: precio, margen de seguridad y rango estimado de valor intrínseco.">
-          <div class="plate-top"><span>LECTURA DEL VALOR</span><span>PRECIO ↔ VALOR</span></div>
-          <div class="plate-scale" aria-hidden="true">
-            <span class="plate-axis"></span>
-            <span class="plate-price-pin"></span>
-            <span class="plate-safety-band"></span>
-            <span class="plate-value-range"></span>
-            <span class="plate-tick plate-tick-start"></span>
-            <span class="plate-tick plate-tick-end"></span>
-          </div>
-          <div class="plate-legend">
-            <span class="plate-key plate-key-price"><i aria-hidden="true"></i>Precio de mercado</span>
-            <span class="plate-key plate-key-safety"><i aria-hidden="true"></i>Margen de seguridad</span>
-            <span class="plate-key plate-key-value"><i aria-hidden="true"></i>Rango estimado</span>
-          </div>
-          <div class="plate-foot"><span>ESQUEMA CONCEPTUAL</span><span>SIN ESCALA NI COTIZACIÓN</span></div>
-        </div>
+        ${plateMarkup()}
       </div>
       <div class="hero-foot"><span>EDICIÓN FINANCIERA Y EDITORIAL</span><span>24 SEP 2026</span></div>
     </section>
     <section class="stats-row" aria-label="Datos de la edición">
       <div><strong>34</strong><span>capítulos</span></div>
       <div><strong>5</strong><span>casos ficticios</span></div>
-      <div><strong>1</strong><span>guía de análisis por tiempo</span></div>
-      <div><strong>2025</strong><span>corte de los casos</span></div>
+      <div><strong>6</strong><span>casos reales</span></div>
+      <div><strong>2026</strong><span>corte de mercado</span></div>
     </section>
     <section class="home-section">
       <div class="section-heading">
@@ -345,7 +394,7 @@ function renderHome() {
     </section>
     <section class="disclaimer-strip">
       <span class="disclaimer-mark" aria-hidden="true">i</span>
-      <p><strong>Material educativo.</strong> Los precios, empresas, balances y rentabilidades de los ejemplos son ficticios. No es asesoramiento financiero ni una recomendación de compra.</p>
+      <p><strong>Material educativo.</strong> Capítulos 1–34 y apéndices: datos ficticios (corte 31 dic 2025). Casos reales: datos de informes públicos, con ejercicio, auditoría, fuente y fecha de consulta por empresa. No es asesoramiento financiero ni una recomendación de compra.</p>
       <a href="${appendices.file}">Convenciones y fuentes →</a>
     </section>`;
 }
@@ -409,4 +458,4 @@ for (const page of renderedPages) {
 writeFile(path.join(output, '.nojekyll'), '');
 writeFile(path.join(output, 'assets', 'search-index.js'), `window.MANUAL_SEARCH_INDEX=${safeJson(searchDocuments)};\n`);
 console.log(`Sitio estático generado en ${output}`);
-console.log(`Páginas: ${renderedPages.length + 1} (guía, 34 capítulos, apéndices, protocolo y portada); partes fuente: ${parts.length}.`);
+console.log(`Páginas: ${renderedPages.length + 1} (guía, 34 capítulos, casos reales, apéndices, protocolo y portada); partes fuente: ${parts.length}.`);

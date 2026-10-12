@@ -4,7 +4,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const site = path.join(root, 'site');
 const requiredFiles = [
-  'index.html', 'guia.html', 'apendices.html', 'protocolo.html',
+  'index.html', 'guia.html', 'apendices.html', 'casos-reales.html', 'protocolo.html',
   'assets/site.css', 'assets/site.js', 'assets/mark.svg', 'assets/search-index.js', '.nojekyll',
   ...Array.from({ length: 34 }, (_, index) => `capitulo-${String(index + 1).padStart(2, '0')}.html`),
 ];
@@ -19,7 +19,7 @@ for (const file of requiredFiles) check(`existe ${file}`, fs.existsSync(path.joi
 if (!fs.existsSync(site)) process.exit(1);
 
 const htmlFiles = fs.readdirSync(site).filter((file) => file.endsWith('.html'));
-check('38 páginas HTML', htmlFiles.length === 38, String(htmlFiles.length));
+check('39 páginas HTML', htmlFiles.length === 39, String(htmlFiles.length));
 const pages = new Map(htmlFiles.map((file) => [file, fs.readFileSync(path.join(site, file), 'utf8')]));
 let localLinks = 0;
 let brokenLinks = 0;
@@ -66,6 +66,19 @@ check('fórmulas en bloques legibles', mathBlocks >= 60, String(mathBlocks));
 
 const chapterLinks = (pages.get('index.html') || '').match(/href="capitulo-\d{2}\.html"/g) || [];
 check('portada enlaza a bloques de capítulos', chapterLinks.length >= 6, String(chapterLinks.length));
+const home = pages.get('index.html') || '';
+const plateAttr = (name) => {
+  const match = home.match(new RegExp(`data-plate-${name}="([^"]+)"`));
+  return match ? match[1] : '';
+};
+const { placa } = require('./casos_reales');
+const plate = placa();
+check('la placa declara la empresa del módulo', plateAttr('id') === plate.empresa.id, plateAttr('id'));
+check('la placa usa el precio del módulo', Math.abs(Number(plateAttr('price')) - plate.empresa.mercado.precio) < 1e-6, plateAttr('price'));
+check('la placa usa el IV bajo del módulo', Math.abs(Number(plateAttr('iv-low')) - plate.valor.ivBajo) < 1e-3, plateAttr('iv-low'));
+check('la placa usa el IV alto del módulo', Math.abs(Number(plateAttr('iv-high')) - plate.valor.ivAlto) < 1e-3, plateAttr('iv-high'));
+check('la placa usa el MoS del módulo', Math.abs(Number(plateAttr('mos')) - plate.valor.mosBajo) < 1e-5, plateAttr('mos'));
+check('la placa enlaza al cálculo', home.includes('href="casos-reales.html"'));
 const searchSource = fs.readFileSync(path.join(site, 'assets', 'search-index.js'), 'utf8');
 let searchIndex = [];
 try {
@@ -75,7 +88,7 @@ try {
   console.error(`No se pudo leer search-index.js: ${error.message}`);
   ok = false;
 }
-check('índice de búsqueda cubre guía, capítulos, apéndices y protocolo', searchIndex.length === 37, String(searchIndex.length));
+check('índice de búsqueda cubre guía, capítulos, casos reales, apéndices y protocolo', searchIndex.length === 38, String(searchIndex.length));
 check('búsqueda incluye los 34 capítulos', new Set(searchIndex.map((item) => item.number).filter(Boolean)).size === 34);
 const indexedText = searchIndex.map((item) => `${item.title} ${item.text}`).join(' ').toLowerCase();
 for (const term of ['owner earnings', 'fcff', 'fcfe', 'bonos', 'glosario', '30 minutos', '1 hora', '3 horas']) {
