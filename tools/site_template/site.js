@@ -13,6 +13,14 @@
   const progress = document.getElementById('readingProgress');
   // Dentro de la app Android (WebView local) se ocultan los elementos solo-web, como la descarga del APK.
   if (/ManualInversionApp\//.test(navigator.userAgent)) root.classList.add('is-app');
+  // En pantallas angostas el texto guía largo del buscador se corta: se usa uno breve.
+  if (searchInput && window.matchMedia) {
+    const narrow = window.matchMedia('(max-width: 520px)');
+    const fullPlaceholder = searchInput.getAttribute('placeholder');
+    const setPlaceholder = () => searchInput.setAttribute('placeholder', narrow.matches ? 'Buscar…' : fullPlaceholder);
+    setPlaceholder();
+    if (narrow.addEventListener) narrow.addEventListener('change', setPlaceholder);
+  }
   const searchIndex = Array.isArray(window.MANUAL_SEARCH_INDEX) ? window.MANUAL_SEARCH_INDEX.map((document) => ({
     ...document,
     foldedTitle: fold(document.title),
@@ -147,6 +155,24 @@
   window.addEventListener('scroll', updateProgress, { passive: true });
   window.addEventListener('resize', updateProgress);
   updateProgress();
+
+  // Tablas anchas: aviso "Desliza" y difuminado en el borde solo cuando no entran en pantalla.
+  const tableWraps = [...document.querySelectorAll('.table-wrap')];
+  function updateTable(wrap) {
+    const overflow = wrap.scrollWidth > wrap.clientWidth + 2;
+    wrap.classList.toggle('has-overflow', overflow);
+    wrap.classList.toggle('at-start', wrap.scrollLeft <= 2);
+    wrap.classList.toggle('at-end', !overflow || wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 2);
+  }
+  tableWraps.forEach((wrap) => {
+    updateTable(wrap);
+    wrap.addEventListener('scroll', () => updateTable(wrap), { passive: true });
+  });
+  let resizeFrame = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => tableWraps.forEach(updateTable));
+  });
 
   const tocLinks = [...document.querySelectorAll('.contents-panel a[href^="#"]')];
   if ('IntersectionObserver' in window && tocLinks.length) {

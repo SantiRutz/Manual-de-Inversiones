@@ -94,6 +94,8 @@ function inline(text) {
   let html = escapeHtml(text);
   const tokens = [];
   html = html.replace(/`([^`]+)`/g, (_, value) => { tokens.push(`<code>${value}</code>`); return `\u0000${tokens.length - 1}\u0000`; });
+  // Autoenlaces <https://…>: se tokenizan para que los guiones bajos de la URL no se lean como cursiva.
+  html = html.replace(/&lt;(https?:\/\/[^\s<>]+?)&gt;/g, (_, url) => { tokens.push(`<a class="url" href="${url}" target="_blank" rel="noopener">${url}</a>`); return `\u0000${tokens.length - 1}\u0000`; });
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => `<a href="${escapeHtml(href)}">${label}</a>`);
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
@@ -227,8 +229,10 @@ function markdownToHtml(markdown) {
 function plainText(markdown) {
   return markdown.replace(/^```[^\r\n]*\r?\n|^```\s*$/gm, ' ')
     .replace(/\\\[([\s\S]*?)\\\]/g, ' $1 ')
+    .replace(/\\(?:text|mathrm|operatorname)\{([^}]*)\}/g, '$1')
+    .replace(/\\(?:times|cdot)/g, '×').replace(/\\frac/g, ' ')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[`*_>#|~]/g, ' ').replace(/\\/g, ' ')
+    .replace(/[`*_>#|~{}]/g, ' ').replace(/\\/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 function safeJson(value) {
