@@ -1,0 +1,7 @@
+build
+dist
+android
+docs
+.claude
+.env*
+.vercel

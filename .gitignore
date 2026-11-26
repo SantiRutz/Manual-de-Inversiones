@@ -1,0 +1,11 @@
+# Artefactos intermedios y de salida del APK (tools/build_apk.js).
+# La copia publicada vive en site/descargas/.
+/build/
+/dist/
+*.idsig
+*.jks
+*.keystore
+
+# Enlace local de Vercel CLI
+.vercel
+.env*

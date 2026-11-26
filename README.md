@@ -21,6 +21,16 @@ node tools/validate_website.js
 
 Abra `site/index.html` para leerlo localmente sin conexión. Para publicarlo, suba el contenido completo del directorio `site/` a cualquier alojamiento de archivos estáticos. No requiere servidor de aplicación, base de datos, paquetes npm ni servicios externos. El generador usa las mismas partes canónicas en `manual_parts/`; `site/` es salida generada y no se edita a mano. Los estilos y el JavaScript fuente viven en `tools/site_template/`.
 
+Al imprimir una página del sitio (botón **Imprimir** o Ctrl/⌘ P) se obtiene una edición formal en A4: membrete, encabezados y numeración de página, tablas y fórmulas maquetadas y la portada como cubierta. Active «Gráficos de fondo» para conservar los colores.
+
+## App Android sin conexión
+
+```powershell
+node tools/build_apk.js
+```
+
+Genera `dist/manual-inversion.apk` y la copia descargable `site/descargas/manual-inversion.apk`, enlazada desde la portada. Usa el JDK 17 y el Android SDK instalados (sin Gradle ni descargas). La app no pide permisos: el manual completo va dentro del APK y funciona sin Internet. Requiere Android 8.0 o superior. Se firma con `~/.android/manual-inversion.jks`; conserve ese archivo, porque las actualizaciones deben firmarse con la misma clave.
+
 ## Reconstrucción
 
 Si se editan los archivos de `manual_parts/`, se puede regenerar el documento maestro, el HTML y el sitio. `tools/build_manual.js` define las 14 partes canónicas y su orden; los borradores y reportes históricos se retiraron para evitar reconstrucciones ambiguas.

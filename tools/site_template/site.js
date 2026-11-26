@@ -11,6 +11,8 @@
   const mobileScrim = document.getElementById('mobileScrim');
   const themeToggle = document.getElementById('themeToggle');
   const progress = document.getElementById('readingProgress');
+  // Dentro de la app Android (WebView local) se ocultan los elementos solo-web, como la descarga del APK.
+  if (/ManualInversionApp\//.test(navigator.userAgent)) root.classList.add('is-app');
   const searchIndex = Array.isArray(window.MANUAL_SEARCH_INDEX) ? window.MANUAL_SEARCH_INDEX.map((document) => ({
     ...document,
     foldedTitle: fold(document.title),
@@ -127,7 +129,7 @@
     const next = theme === 'light' ? 'light' : 'dark';
     root.dataset.theme = next;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', next === 'dark' ? '#171f1d' : '#f1eee5');
+    if (meta) meta.setAttribute('content', next === 'dark' ? '#111917' : '#f4f1e9');
   }
   applyTheme(savedTheme);
   if (themeToggle) themeToggle.addEventListener('click', () => {
