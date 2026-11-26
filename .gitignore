@@ -8,3 +8,4 @@
 
 # Enlace local de Vercel CLI
 .vercel
+.env*
