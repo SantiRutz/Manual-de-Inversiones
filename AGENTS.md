@@ -44,6 +44,14 @@ node tools/validate_website.js
 - Inside the app the user agent contains `ManualInversionApp/`; `site.js` adds `html.is-app`, which hides `.web-only` elements. The app overrides `window.print()` with Android's print service and mirrors the light/dark theme onto the system bars.
 - Vercel serves `site/` as-is (`vercel.json`: no build, `outputDirectory: site`).
 
+## Web languages (machine translation)
+
+- The manual is written and reviewed only in Spanish. The website (not the APK) offers 84 more languages through a topbar language picker (`languagePickerHtml()` in `tools/build_website.js`) whose links open the current page through Google Translate's proxy (`translate.google.com/translate?sl=es&tl=…&u=…` → `*.translate.goog`). The site loads no external script; it only links out.
+- The language list, endonyms, groups (global, Africa, Oceania, Asia, Europe, Americas) and `SITE_URL` live in `tools/site_languages.js`. Each code was verified against the proxy on 2026-11-26; Bislama (`bi`) and Wolof (`wo`, returned French) were excluded. Re-verify before adding a code; Google rate-limits bursts of automated checks.
+- The picker and the browser-language hint (`#langHint`, dismissal stored as `manual-lang-hint`) carry `web-only notranslate translate="no"`, so the app hides them and the translator never rewrites the endonyms. On `*.translate.goog`, `site.js` reads `_x_tr_tl` to mark the active language and suppresses the hint.
+- `validate_website.js` asserts every page offers all module languages and links its own translated URL. If the production domain changes, update `SITE_URL`.
+- The Cyrillic/CJK/Hangul ban applies to the manual content validated by `validate_manual.js`; the picker's endonyms (site chrome only) are the deliberate exception.
+
 ## Content invariants
 
 - Keep the final 30-minute/1-hour/3-hour protocol in `manual_parts/parte_37_protocolo_tiempos.md`, after the canonical appendices, aliases, and casos reales; the published document must retain 34 chapters and that final section.

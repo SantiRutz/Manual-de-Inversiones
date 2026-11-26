@@ -146,6 +146,109 @@
     try { localStorage.setItem('manual-theme', next); } catch (_) { /* theme still changes for this page */ }
   });
 
+  // ---------- Selector de idioma (solo web; en la app .web-only lo oculta) ----------
+  const isApp = root.classList.contains('is-app');
+  const langToggle = document.getElementById('langToggle');
+  const langMenu = document.getElementById('langMenu');
+  const langClose = document.getElementById('langClose');
+  const langFilter = document.getElementById('langFilter');
+  const langEmpty = document.getElementById('langEmpty');
+  const langOptions = [...document.querySelectorAll('.lang-option')];
+  // Dentro del proxy de Google la página vive en *.translate.goog y el idioma va en _x_tr_tl.
+  const proxied = /\.translate\.goog$/i.test(location.hostname);
+  let currentLang = 'es';
+  try { if (proxied) currentLang = new URLSearchParams(location.search).get('_x_tr_tl') || 'es'; } catch (_) { /* URL sin parámetros */ }
+  langOptions.forEach((option) => {
+    if (option.dataset.lang.toLowerCase() === currentLang.toLowerCase()) option.setAttribute('aria-current', 'true');
+  });
+  const langCode = document.getElementById('langCode');
+  if (langCode) langCode.textContent = currentLang.split('-')[0].toUpperCase();
+
+  function setLangMenu(open, { focusToggle = false } = {}) {
+    if (!langMenu || !langToggle) return;
+    langMenu.hidden = !open;
+    langToggle.setAttribute('aria-expanded', String(open));
+    if (open) {
+      closeSearch();
+      // En pantallas táctiles no se abre el teclado sin que la persona lo pida.
+      if (langFilter && window.matchMedia && window.matchMedia('(hover: hover)').matches) langFilter.focus();
+    } else if (focusToggle) {
+      langToggle.focus();
+    }
+  }
+  if (langToggle && langMenu) {
+    langToggle.addEventListener('click', (event) => { event.stopPropagation(); setLangMenu(langMenu.hidden); });
+    if (langClose) langClose.addEventListener('click', () => setLangMenu(false, { focusToggle: true }));
+    document.addEventListener('click', (event) => {
+      if (!langMenu.hidden && !event.target.closest('.lang-picker') && !event.target.closest('.lang-hint')) setLangMenu(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !langMenu.hidden) setLangMenu(false, { focusToggle: true });
+    });
+  }
+  if (langFilter) {
+    langFilter.addEventListener('input', () => {
+      const query = fold(langFilter.value).trim();
+      let visible = 0;
+      document.querySelectorAll('.lang-group').forEach((group) => {
+        let groupVisible = 0;
+        group.querySelectorAll('li').forEach((item) => {
+          const option = item.querySelector('.lang-option');
+          const match = !query || (option && option.dataset.search.includes(query));
+          item.hidden = !match;
+          if (match) groupVisible += 1;
+        });
+        group.hidden = groupVisible === 0;
+        visible += groupVisible;
+      });
+      if (langEmpty) langEmpty.hidden = visible > 0;
+    });
+  }
+
+  // Aviso discreto si el navegador prefiere otro idioma disponible (una vez descartado, no vuelve).
+  const langHint = document.getElementById('langHint');
+  if (langHint && !isApp && !proxied && langOptions.length) {
+    let dismissed = false;
+    try { dismissed = localStorage.getItem('manual-lang-hint') === 'off'; } catch (_) { /* sin almacenamiento */ }
+    const available = new Set(langOptions.map((option) => option.dataset.lang));
+    const aliases = { he: 'iw', fil: 'tl', zh: 'zh-CN' };
+    const matchLang = (tag) => {
+      const lower = String(tag || '').toLowerCase();
+      const [base, region] = lower.split('-');
+      if (!base) return null;
+      if (base === 'zh') return ['tw', 'hk', 'mo', 'hant'].includes(region) ? 'zh-TW' : 'zh-CN';
+      const code = aliases[base] || base;
+      return available.has(code) ? code : null;
+    };
+    const preferred = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+    let target = null;
+    for (const tag of preferred) {
+      const code = matchLang(tag);
+      if (code) { target = code === 'es' ? null : code; break; }
+    }
+    const option = target && langOptions.find((item) => item.dataset.lang === target);
+    if (option && !dismissed) {
+      const link = document.getElementById('langHintLink');
+      link.href = option.href;
+      link.textContent = `${option.querySelector('.lang-name').textContent} →`;
+      link.lang = option.lang;
+      const nameDir = option.querySelector('.lang-name').getAttribute('dir');
+      if (nameDir) link.dir = nameDir;
+      link.setAttribute('aria-label', `${option.querySelector('.lang-name').textContent} · ${option.querySelector('small').textContent}`);
+      langHint.hidden = false;
+      const dismiss = () => {
+        langHint.hidden = true;
+        try { localStorage.setItem('manual-lang-hint', 'off'); } catch (_) { /* sin almacenamiento */ }
+      };
+      document.getElementById('langHintClose').addEventListener('click', dismiss);
+      document.getElementById('langHintMore').addEventListener('click', (event) => {
+        event.stopPropagation();
+        dismiss();
+        setLangMenu(true);
+      });
+    }
+  }
+
   function updateProgress() {
     if (!progress) return;
     const scrollable = document.documentElement.scrollHeight - window.innerHeight;

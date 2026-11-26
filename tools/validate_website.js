@@ -64,6 +64,13 @@ for (const [file, html] of pages) {
 check('enlaces locales válidos', brokenLinks === 0, `${localLinks} verificados; ${brokenLinks} rotos`);
 check('fórmulas en bloques legibles', mathBlocks >= 60, String(mathBlocks));
 
+const { LANGUAGES, translatedUrl } = require('./site_languages');
+for (const [file, html] of pages) {
+  const options = html.match(/class="lang-option"/g) || [];
+  check(`${file} ofrece ${LANGUAGES.length} idiomas`, options.length === LANGUAGES.length, String(options.length));
+  check(`${file} enlaza su propia página traducida`, html.includes(`href="${translatedUrl('en', file).replace(/&/g, '&amp;')}"`));
+  check(`${file} selector de idioma solo web y sin traducir`, /class="lang-picker web-only notranslate" translate="no"/.test(html));
+}
 const chapterLinks = (pages.get('index.html') || '').match(/href="capitulo-\d{2}\.html"/g) || [];
 check('portada enlaza a bloques de capítulos', chapterLinks.length >= 6, String(chapterLinks.length));
 const home = pages.get('index.html') || '';
