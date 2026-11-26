@@ -1,15 +1,16 @@
 // Idiomas del selector de la web (no de la app Android).
-// El manual se escribe y revisa en español; las demás lenguas se sirven con la
-// traducción automática de Google Translate mediante un enlace a su proxy
-// (translate.goog). El sitio no carga ningún script externo: solo enlaza.
+// El manual se escribe y revisa en español; las demás lenguas se traducen dentro
+// de la propia página con el traductor de sitios de Google (translate_a/element.js),
+// que site.js carga solo cuando el visitante elige otro idioma. La interfaz de Google
+// queda oculta: el visitante solo ve el selector y la barra propios del sitio.
 //
-// Cada código se verificó contra el proxy el 26 nov 2026 (capítulo 9 traducido).
-// Excluidos por no funcionar entonces: bislama (bi) y wolof (wo, devolvía francés).
+// Los 84 códigos se verificaron el 26 nov 2026 entre las opciones del traductor y con
+// traducciones reales (p. ej. árabe, suajili, maorí, tok pisin, tamazight).
+// Excluidos: bislama (bi, sin soporte) y wolof (wo, devolvía francés).
 // `name` es el endónimo (cómo se llama la lengua en sí misma); `en` y `es` sirven
 // para filtrar desde el buscador del selector. `hreflang` corrige códigos propios
 // de Google (iw → he). `dir: 'rtl'` marca escrituras de derecha a izquierda.
 
-const SITE_URL = 'https://manual-inversion.vercel.app/';
 const SOURCE_LANG = 'es';
 
 const GROUPS = [
@@ -120,11 +121,4 @@ const LANGUAGES = [
   { code: 'ht', name: 'Kreyòl ayisyen', en: 'Haitian Creole', es: 'Criollo haitiano', group: 'americas' },
 ];
 
-/** URL de la página `file` en el idioma `code` (el español es el original, sin proxy). */
-function translatedUrl(code, file) {
-  const original = SITE_URL + (file === 'index.html' ? '' : file);
-  if (code === SOURCE_LANG) return original;
-  return `https://translate.google.com/translate?sl=${SOURCE_LANG}&tl=${encodeURIComponent(code)}&hl=${encodeURIComponent(code)}&u=${encodeURIComponent(original)}`;
-}
-
-module.exports = { SITE_URL, SOURCE_LANG, GROUPS, LANGUAGES, translatedUrl };
+module.exports = { SOURCE_LANG, GROUPS, LANGUAGES };

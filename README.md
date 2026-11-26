@@ -25,7 +25,7 @@ Al imprimir una página del sitio (botón **Imprimir** o Ctrl/⌘ P) se obtiene 
 
 ## Idiomas de la web
 
-La web incluye un selector de idioma (globo en la barra superior) con 84 lenguas además del español: las principales del mundo y lenguas de África, Oceanía, Asia, Europa y las Américas. Cada enlace abre la página actual con la traducción automática de Google; el original revisado es el español. Si el navegador del visitante está en otro idioma disponible, aparece un aviso para leer en ese idioma. La lista vive en `tools/site_languages.js`. La app Android no muestra el selector, porque funciona sin conexión.
+La web incluye un selector de idioma (globo en la barra superior) con 84 lenguas además del español: las principales del mundo y lenguas de África, Oceanía, Asia, Europa y las Américas. Al tocar un idioma, la página se traduce ahí mismo con la traducción automática de Google, sin salir del sitio ni ver la interfaz de Google. El idioma se recuerda al cambiar de capítulo, y una barra inferior permite cambiarlo o volver al original con «Español ↺». El original revisado es el español. Si el navegador del visitante está en otro idioma disponible, aparece un aviso para traducir con un toque. La lista vive en `tools/site_languages.js`. La app Android no muestra el selector, porque funciona sin conexión.
 
 ## App Android sin conexión
 

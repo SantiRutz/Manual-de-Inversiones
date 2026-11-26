@@ -46,10 +46,11 @@ node tools/validate_website.js
 
 ## Web languages (machine translation)
 
-- The manual is written and reviewed only in Spanish. The website (not the APK) offers 84 more languages through a topbar language picker (`languagePickerHtml()` in `tools/build_website.js`) whose links open the current page through Google Translate's proxy (`translate.google.com/translate?sl=es&tl=…&u=…` → `*.translate.goog`). The site loads no external script; it only links out.
-- The language list, endonyms, groups (global, Africa, Oceania, Asia, Europe, Americas) and `SITE_URL` live in `tools/site_languages.js`. Each code was verified against the proxy on 2026-11-26; Bislama (`bi`) and Wolof (`wo`, returned French) were excluded. Re-verify before adding a code; Google rate-limits bursts of automated checks.
-- The picker and the browser-language hint (`#langHint`, dismissal stored as `manual-lang-hint`) carry `web-only notranslate translate="no"`, so the app hides them and the translator never rewrites the endonyms. On `*.translate.goog`, `site.js` reads `_x_tr_tl` to mark the active language and suppresses the hint.
-- `validate_website.js` asserts every page offers all module languages and links its own translated URL. If the production domain changes, update `SITE_URL`.
+- The manual is written and reviewed only in Spanish. The website (not the APK) offers 84 more languages through a topbar language picker (`languagePickerHtml()` in `tools/build_website.js`). Choosing one translates the page in place: `site.js` lazy-loads Google's website translator (`translate_a/element.js`) only after the visitor picks a non-Spanish language, then drives its hidden `.goog-te-combo`. Google's UI (banner, tooltips, highlights) is hidden in `site.css`; visitors only see the site's own picker and `#translateBar` (state `loading` / `done` / `error`, buttons "Cambiar idioma", "Español ↺", retry).
+- Do not go back to linking the `translate.goog` proxy: it intermittently showed "Can't translate this page" and exposed Google's interface.
+- The choice persists across pages via `localStorage` `manual-lang` plus the `googtrans=/es/<code>` cookie the translator reads; "Español ↺" clears both and reloads. RTL languages flip text direction (`html.translated-rtl`) but keep formulas, code and table structure LTR.
+- This is the only network request the site can make, and only on explicit opt-in. No page HTML references Google (`validate_website.js` asserts it, plus 84 options, the bar and `translate="no"` on the picker). Offline, the bar shows the error state; the Spanish text stays intact.
+- The language list, endonyms and groups (global, Africa, Oceania, Asia, Europe, Americas) live in `tools/site_languages.js`. All 84 codes were present in the translator's options on 2026-11-26; Bislama (`bi`) and Wolof (`wo`) were excluded. Google rate-limits bursts of automated checks.
 - The Cyrillic/CJK/Hangul ban applies to the manual content validated by `validate_manual.js`; the picker's endonyms (site chrome only) are the deliberate exception.
 
 ## Content invariants

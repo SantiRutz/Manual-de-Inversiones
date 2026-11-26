@@ -64,12 +64,13 @@ for (const [file, html] of pages) {
 check('enlaces locales válidos', brokenLinks === 0, `${localLinks} verificados; ${brokenLinks} rotos`);
 check('fórmulas en bloques legibles', mathBlocks >= 60, String(mathBlocks));
 
-const { LANGUAGES, translatedUrl } = require('./site_languages');
+const { LANGUAGES } = require('./site_languages');
 for (const [file, html] of pages) {
-  const options = html.match(/class="lang-option"/g) || [];
+  const options = html.match(/class="lang-option" data-lang="/g) || [];
   check(`${file} ofrece ${LANGUAGES.length} idiomas`, options.length === LANGUAGES.length, String(options.length));
-  check(`${file} enlaza su propia página traducida`, html.includes(`href="${translatedUrl('en', file).replace(/&/g, '&amp;')}"`));
   check(`${file} selector de idioma solo web y sin traducir`, /class="lang-picker web-only notranslate" translate="no"/.test(html));
+  check(`${file} tiene la barra de traducción propia`, html.includes('id="translateBar"') && html.includes('id="googleTranslateHost"'));
+  check(`${file} no carga el traductor por adelantado`, !/translate\.google|translate\.goog/.test(html));
 }
 const chapterLinks = (pages.get('index.html') || '').match(/href="capitulo-\d{2}\.html"/g) || [];
 check('portada enlaza a bloques de capítulos', chapterLinks.length >= 6, String(chapterLinks.length));
