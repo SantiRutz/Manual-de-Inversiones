@@ -44,6 +44,15 @@ node tools/validate_website.js
 - Inside the app the user agent contains `ManualInversionApp/`; `site.js` adds `html.is-app`, which hides `.web-only` elements. The app overrides `window.print()` with Android's print service and mirrors the light/dark theme onto the system bars.
 - Vercel serves `site/` as-is (`vercel.json`: no build, `outputDirectory: site`).
 
+## Web languages (machine translation)
+
+- The manual is written and reviewed only in Spanish. The website (not the APK) offers 84 more languages through a topbar language picker (`languagePickerHtml()` in `tools/build_website.js`). Choosing one translates the page in place: `site.js` lazy-loads Google's website translator (`translate_a/element.js`) only after the visitor picks a non-Spanish language, then drives its hidden `.goog-te-combo`. Google's UI (banner, tooltips, highlights) is hidden in `site.css`; visitors only see the site's own picker and `#translateBar` (state `loading` / `done` / `error`, buttons "Cambiar idioma", "Español ↺", retry).
+- Do not go back to linking the `translate.goog` proxy: it intermittently showed "Can't translate this page" and exposed Google's interface.
+- The choice persists across pages via `localStorage` `manual-lang` plus the `googtrans=/es/<code>` cookie the translator reads; "Español ↺" clears both and reloads. RTL languages flip text direction (`html.translated-rtl`) but keep formulas, code and table structure LTR.
+- This is the only network request the site can make, and only on explicit opt-in. No page HTML references Google (`validate_website.js` asserts it, plus 84 options, the bar and `translate="no"` on the picker). Offline, the bar shows the error state; the Spanish text stays intact.
+- The language list, endonyms and groups (global, Africa, Oceania, Asia, Europe, Americas) live in `tools/site_languages.js`. All 84 codes were present in the translator's options on 2026-11-26; Bislama (`bi`) and Wolof (`wo`) were excluded. Google rate-limits bursts of automated checks.
+- The Cyrillic/CJK/Hangul ban applies to the manual content validated by `validate_manual.js`; the picker's endonyms (site chrome only) are the deliberate exception.
+
 ## Content invariants
 
 - Keep the final 30-minute/1-hour/3-hour protocol in `manual_parts/parte_37_protocolo_tiempos.md`, after the canonical appendices, aliases, and casos reales; the published document must retain 34 chapters and that final section.
