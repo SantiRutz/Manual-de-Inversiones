@@ -24,6 +24,7 @@ node tools/dcf_sensitivity.js
 node tools/scan_master.js MANUAL_VALUE_INVESTING_Y_ANALISIS_FINANCIERO_REVISADO.md
 node tools/scan_question_artifacts.js MANUAL_VALUE_INVESTING_Y_ANALISIS_FINANCIERO_REVISADO.md
 node tools/build_website.js
+node tools/build_apk.js
 node tools/validate_website.js
 ```
 
@@ -34,6 +35,14 @@ node tools/validate_website.js
 - If chapter 30 inputs change, update the expected fixtures in both `tools/canonical_cases.js` and `tools/verify_reviewed_numbers.js`, then run both scripts.
 - If a real case changes, edit only `tools/casos_reales.js`: `verify_reviewed_numbers.js` recomputes terminal flow, TV, bridge, per-share IV and MoS from the module (no separate fixtures), and `validate_website.js` catches plate/module drift. `placaId` selects which company the cover plate shows.
 - The reviewed Markdown/HTML and the `site/` folder are generated deliverables; edit canonical parts or `tools/site_template/`, then rebuild rather than patching outputs by hand.
+
+## Android APK and deployment
+
+- `android/` holds a dependency-free WebView reader (`MainActivity.java`, manifest, adaptive icon). `tools/build_apk.js` rebuilds `site/`, then packages it with the installed JDK 17 and Android SDK (aapt2 → javac `--release 8` → d8 → zipalign → apksigner); no Gradle, no network.
+- The APK requests no permissions: the whole site ships in `assets/site` and external links open in the system browser. Output: `dist/manual-inversion.apk` (ignored) plus the published copy `site/descargas/manual-inversion.apk`, which the home page links to (`validate_website.js` fails if it is missing). The download folder is excluded from the APK itself.
+- Rebuild the APK whenever `site/` changes so the downloadable copy is not stale. It is signed with `~/.android/manual-inversion.jks` (override with `APK_KEYSTORE` / `APK_KEYSTORE_PASS`); keep that key outside the repo — updates must use the same key.
+- Inside the app the user agent contains `ManualInversionApp/`; `site.js` adds `html.is-app`, which hides `.web-only` elements. The app overrides `window.print()` with Android's print service and mirrors the light/dark theme onto the system bars.
+- Vercel serves `site/` as-is (`vercel.json`: no build, `outputDirectory: site`).
 
 ## Content invariants
 
@@ -53,3 +62,4 @@ node tools/validate_website.js
 - Accent split: teal (`--teal`/`--teal-dark`) for action and navigation (primary button, links, progress bars, active nav, table headers); gold stays a data flourish only (formula blocks, MoS figure, `DESCUENTO` label, table top rule, `h1` underline). Do not promote gold to new interactive roles.
 - The cover plate SVG is computed in `plateMarkup()` (`tools/build_website.js`) from the module — never hardcode its numbers. It needs `prefers-reduced-motion`-safe static output and a one-column `.plate-read` fallback under 520 px.
 - The `@media print` block in `site.css` must redefine every theme token (dark values leak onto white paper otherwise).
+- Print is a formal A4 edition: `@page` margin boxes add running heads and `page / pages` numbering (Chromium; other browsers ignore them), `.print-masthead` / `.print-colophon` are emitted by `pageShell()` and are hidden on screen, and the home page prints as a cover.
