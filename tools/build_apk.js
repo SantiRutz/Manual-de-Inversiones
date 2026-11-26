@@ -4,7 +4,7 @@
 //
 //   node tools/build_apk.js
 //
-// Salidas: dist/manual-inversion.apk y site/descargas/manual-inversion.apk (enlace de la portada).
+// Salida: dist/manual-inversion.apk (no se publica en el repositorio ni en la web).
 // Firma: keystore propio fuera del repositorio (APK_KEYSTORE, por defecto ~/.android/manual-inversion.jks;
 // contraseña en APK_KEYSTORE_PASS). Si no existe, se crea. Conserve ese archivo: las actualizaciones
 // del APK deben firmarse con la misma clave.
@@ -68,12 +68,12 @@ const tool = (name) => path.join(buildTools, name);
 fs.rmSync(work, { recursive: true, force: true });
 for (const dir of ['compiled', 'gen', 'classes', 'dex', 'assets']) fs.mkdirSync(path.join(work, dir), { recursive: true });
 
-// 2. Recursos y assets (el sitio, sin la carpeta de descargas para no meter el APK dentro de sí mismo).
+// 2. Recursos y assets (el sitio completo).
 const resZip = path.join(work, 'compiled', 'res.zip');
 run(tool('aapt2'), ['compile', '--dir', path.join(androidDir, 'res'), '-o', resZip]);
 fs.cpSync(site, path.join(work, 'assets', 'site'), {
   recursive: true,
-  filter: (source) => !source.startsWith(path.join(site, 'descargas')) && path.basename(source) !== '.nojekyll',
+  filter: (source) => path.basename(source) !== '.nojekyll',
 });
 const unsigned = path.join(work, 'app-unsigned.apk');
 run(tool('aapt2'), ['link', '-o', unsigned, '-I', androidJar,
@@ -112,11 +112,5 @@ run(tool('apksigner'), ['sign', '--ks', keystore, '--ks-key-alias', 'manual', '-
 run(tool('apksigner'), ['verify', signed]);
 fs.rmSync(`${signed}.idsig`, { force: true });
 
-// 5. Copia descargable desde la portada de la web.
-const downloads = path.join(site, 'descargas');
-fs.mkdirSync(downloads, { recursive: true });
-fs.copyFileSync(signed, path.join(downloads, apkName));
-
 const size = (fs.statSync(signed).size / 1024 / 1024).toFixed(2);
 console.log(`APK firmado: ${path.relative(root, signed)} (${size} MB, versionCode ${versionCode}, minSdk ${minSdk}, targetSdk ${targetSdk})`);
-console.log(`Copia para la web: site/descargas/${apkName}`);

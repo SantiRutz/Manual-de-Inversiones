@@ -27,13 +27,13 @@ Al imprimir una página del sitio (botón **Imprimir** o Ctrl/⌘ P) se obtiene 
 
 La web incluye un selector de idioma (globo en la barra superior) con 84 lenguas además del español: las principales del mundo y lenguas de África, Oceanía, Asia, Europa y las Américas. Al tocar un idioma, la página se traduce ahí mismo con la traducción automática de Google, sin salir del sitio ni ver la interfaz de Google. El idioma se recuerda al cambiar de capítulo, y una barra inferior permite cambiarlo o volver al original con «Español ↺». El original revisado es el español. Si el navegador del visitante está en otro idioma disponible, aparece un aviso para traducir con un toque. La lista vive en `tools/site_languages.js`. La app Android no muestra el selector, porque funciona sin conexión.
 
-## App Android sin conexión
+## App Android sin conexión (local)
 
 ```powershell
 node tools/build_apk.js
 ```
 
-Genera `dist/manual-inversion.apk` y la copia descargable `site/descargas/manual-inversion.apk`, enlazada desde la portada. Usa el JDK 17 y el Android SDK instalados (sin Gradle ni descargas). La app no pide permisos: el manual completo va dentro del APK y funciona sin Internet. Requiere Android 8.0 o superior. Se firma con `~/.android/manual-inversion.jks`; conserve ese archivo, porque las actualizaciones deben firmarse con la misma clave.
+Genera `dist/manual-inversion.apk` en tu equipo. El APK no se publica en el repositorio ni en la web: se construye y se firma localmente. Usa el JDK 17 y el Android SDK instalados (sin Gradle ni descargas). La app no pide permisos y funciona sin Internet. Requiere Android 8.0 o superior. Se firma con `~/.android/manual-inversion.jks`; conserve ese archivo fuera del repositorio.
 
 ## Reconstrucción
 

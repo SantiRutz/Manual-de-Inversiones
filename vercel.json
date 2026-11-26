@@ -3,15 +3,5 @@
   "framework": null,
   "installCommand": "",
   "buildCommand": "",
-  "outputDirectory": "site",
-  "headers": [
-    {
-      "source": "/descargas/(.*)\\.apk",
-      "headers": [
-        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
-        { "key": "Content-Disposition", "value": "attachment; filename=\"manual-inversion.apk\"" },
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    }
-  ]
+  "outputDirectory": "site"
 }

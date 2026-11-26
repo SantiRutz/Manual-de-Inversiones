@@ -368,7 +368,6 @@ function renderHome() {
     { label: 'Ver los casos completos', detail: 'Cinco empresas ficticias y sus DCF', href: chapterHref(30), icon: '↗' },
     { label: 'Ver los casos reales', detail: 'Seis empresas con informes públicos y DCF', href: 'casos-reales.html', icon: '↗' },
     { label: 'Abrir el protocolo rápido', detail: '30 minutos · 1 hora · 3 horas', href: protocol.file, icon: '↗' },
-    { label: 'Descargar la app para Android', detail: 'APK sin conexión · Android 8 o superior', href: 'descargas/manual-inversion.apk', icon: '↓', download: true },
   ];
   return `
     <section class="hero">
@@ -412,7 +411,7 @@ function renderHome() {
         <h2>¿Por dónde quieres empezar?</h2>
         <p>Busca un concepto, sigue los capítulos en orden o ve directamente al caso que necesitas consultar.</p>
       </div>
-      <div class="quick-links">${quick.map((item) => `<a class="quick-link${item.download ? ' web-only' : ''}" href="${item.href}"${item.download ? ' download type="application/vnd.android.package-archive"' : ''}>
+      <div class="quick-links">${quick.map((item) => `<a class="quick-link" href="${item.href}">
         <span class="quick-copy"><strong>${item.label}</strong><small>${item.detail}</small></span>
         <span class="quick-arrow" aria-hidden="true">${item.icon}</span>
       </a>`).join('')}</div>
