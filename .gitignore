@@ -1,5 +1,4 @@
-# Artefactos intermedios y de salida del APK (tools/build_apk.js).
-# La copia publicada vive en site/descargas/.
+# Artefactos intermedios y de salida del APK (tools/build_apk.js). No se publica.
 /build/
 /dist/
 *.idsig
@@ -9,3 +8,7 @@
 # Enlace local de Vercel CLI
 .vercel
 .env*
+
+# El APK firmado no se publica en el repositorio.
+*.apk
+site/descargas/

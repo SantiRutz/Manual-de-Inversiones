@@ -24,7 +24,6 @@ node tools/dcf_sensitivity.js
 node tools/scan_master.js MANUAL_VALUE_INVESTING_Y_ANALISIS_FINANCIERO_REVISADO.md
 node tools/scan_question_artifacts.js MANUAL_VALUE_INVESTING_Y_ANALISIS_FINANCIERO_REVISADO.md
 node tools/build_website.js
-node tools/build_apk.js
 node tools/validate_website.js
 ```
 
@@ -39,8 +38,8 @@ node tools/validate_website.js
 ## Android APK and deployment
 
 - `android/` holds a dependency-free WebView reader (`MainActivity.java`, manifest, adaptive icon). `tools/build_apk.js` rebuilds `site/`, then packages it with the installed JDK 17 and Android SDK (aapt2 → javac `--release 8` → d8 → zipalign → apksigner); no Gradle, no network.
-- The APK requests no permissions: the whole site ships in `assets/site` and external links open in the system browser. Output: `dist/manual-inversion.apk` (ignored) plus the published copy `site/descargas/manual-inversion.apk`, which the home page links to (`validate_website.js` fails if it is missing). The download folder is excluded from the APK itself.
-- Rebuild the APK whenever `site/` changes so the downloadable copy is not stale. It is signed with `~/.android/manual-inversion.jks` (override with `APK_KEYSTORE` / `APK_KEYSTORE_PASS`); keep that key outside the repo — updates must use the same key.
+- The APK requests no permissions: the whole site ships in `assets/site` and external links open in the system browser. Output: `dist/manual-inversion.apk` (ignored). The APK is never committed or published: `site/descargas/` and `*.apk` are gitignored and the home page has no download link.
+- Rebuild the APK locally when `site/` changes if you still distribute it privately. It is signed with `~/.android/manual-inversion.jks` (override with `APK_KEYSTORE` / `APK_KEYSTORE_PASS`); keep that key outside the repo — updates must use the same key.
 - Inside the app the user agent contains `ManualInversionApp/`; `site.js` adds `html.is-app`, which hides `.web-only` elements. The app overrides `window.print()` with Android's print service and mirrors the light/dark theme onto the system bars.
 - Vercel serves `site/` as-is (`vercel.json`: no build, `outputDirectory: site`).
 
